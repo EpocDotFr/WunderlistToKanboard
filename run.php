@@ -185,8 +185,8 @@ try {
   message('> Sub tasks');
 
   // Sub-tasks are merged in their main task's description like this :
-  //   [ ] Sub-task 1
-  //   [ ] Sub-task 2
+  //   - [ ] Sub-task 1
+  //   - [ ] Sub-task 2
   foreach ($wunderlist_json_data->tasks as $task_to_import) {
     if (!isset($task_to_import->parent_id)) { // If it's not a sub-task, we ignore it
       continue;
@@ -202,7 +202,7 @@ try {
       continue;
     }
 
-    $main_task->description = $main_task->description.PHP_EOL.'  [ ] '.$task_to_import->title;
+    $main_task->description = $main_task->description.PHP_EOL.'  - [ ] '.$task_to_import->title;
 
     $main_task->save();
 
