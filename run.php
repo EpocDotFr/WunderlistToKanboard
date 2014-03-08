@@ -83,6 +83,7 @@ $wunderlist_raw_data = file_get_contents(WUNDERLIST_FILE);
 
 if ($wunderlist_raw_data === false) {
   message('! Error reading the Wunderlist export file "'.WUNDERLIST_FILE.'"');
+  exit();
 }
 
 // Translating the Wunderlist file content to a PHP object
@@ -90,6 +91,7 @@ $wunderlist_json_data = json_decode($wunderlist_raw_data);
 
 if ($wunderlist_json_data == null) {
   message('! Error (errnum '.json_last_error().') reading the JSON data from the Wunderlist export file "'.WUNDERLIST_FILE.'"');
+  exit();
 }
 
 unset($wunderlist_raw_data); // Free some memory (in case of)
