@@ -8,6 +8,7 @@ Quick and dirty PHP script to import Wunderlist (http://www.wunderlist.com/) tas
   - PHP (any 5.x version should work, this script was tested on PHP 5.3.27) with SQLite 3 support
   - A command line interpreter
   - Kanboard 1.0.2 **/!\ this script was tested on this version only**
+  - Wunderlist web application (tested on 2.3.6.1)
   - A beer
 
 ## Quick usage
