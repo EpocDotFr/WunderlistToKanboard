@@ -202,7 +202,7 @@ try {
       continue;
     }
 
-    $main_task->description = $main_task->description.PHP_EOL.'  - [ ] '.$task_to_import->title;
+    $main_task->description = $main_task->description.PHP_EOL.'  - ['.(isset($task_to_import->completed_at) ? 'X' : ' ').'] '.$task_to_import->title;
 
     $main_task->save();
 
