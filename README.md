@@ -33,7 +33,8 @@ The `run.php` file is quite commented (I think) if you want to know more.
 Kanboard and Wunderlist are very different, so there's some things to know about what happens to your tasks and lists in certain cases :
 
   - Lists are imported as Projects
-  - Users are not imported
+  - The default Kanboard's columns are created for each imported projects
+  - Users are not imported (maybe later)
   - Starred tasks will have a color of red, otherwise yellow (Kanboard's default)
   - Sub-tasks are merged in their main task's description
 
