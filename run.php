@@ -173,7 +173,7 @@ try {
     $task_imported->is_active = isset($task_to_import->completed_at) ? 0 : 1;
     $task_imported->date_completed = isset($task_to_import->completed_at) ? date_create($task_to_import->completed_at)->getTimestamp() : null;
     $task_imported->score = null;
-    //$task_imported->date_due = isset($task_to_import->due_date) ? date_create($task_to_import->due_date)->getTimestamp() : null;
+    $task_imported->date_due = isset($task_to_import->due_date) ? date_create($task_to_import->due_date)->getTimestamp() : null;
     
     $task_imported->save();
 
