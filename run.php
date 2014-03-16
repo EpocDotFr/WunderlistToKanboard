@@ -58,13 +58,13 @@ function message($message) {
 
 // This function is copied from kanboard, it generate a unique identifier for each projets (public access)
 function generateToken() {
-  if (ini_get('open_basedir') === '' and strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-    $token = file_get_contents('/dev/urandom', false, null, 0, 30);
-  } else {
-    $token = uniqid(mt_rand(), true);
+  if (function_exists('openssl_random_pseudo_bytes')) {
+      return bin2hex(\openssl_random_pseudo_bytes(16));
+  } else if (ini_get('open_basedir') === '' && strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+      return hash('sha256', file_get_contents('/dev/urandom', false, null, 0, 30));
   }
 
-  return hash('crc32b', $token);
+  return hash('sha256', uniqid(mt_rand(), true));
 }
 
 // Open the kanboard's SQLite database
