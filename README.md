@@ -37,7 +37,7 @@ Kanboard and Wunderlist are very different, so there's some things to know about
   - If a task is marked as completed on Wunderlist, it will be marked as closed on Kanboard
   - Users cannot be imported (Wunderlist doesn't provide them in the export file except IDs)
   - Attached files cannot be imported
-  - ~~Comments cannot be imported (Wunderlist doesn't provide them in the export file)~~ Now they are
+  - Comments cannot be imported (Wunderlist doesn't provide them in the export file)
   - Starred tasks will have a color of red, otherwise yellow (Kanboard's default)
   - ~~Sub-tasks are merged in their main task's description~~ They are now created as real comments
 
