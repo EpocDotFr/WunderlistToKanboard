@@ -5,9 +5,9 @@ Quick and dirty PHP script to import Wunderlist (http://www.wunderlist.com/) tas
 
 ## Prerequisites
 
-  - PHP (any 5.x version should work, this script was tested on PHP 5.3.27) with SQLite 3 support
+  - PHP (any >= 5.x version should work, this script was tested on PHP 5.4.31) with SQLite 3 support
   - A command line interpreter
-  - Kanboard 1.0.3 **/!\ this script was tested on this version only**
+  - Kanboard 1.0.7 **/!\ this script was tested on this version only**
   - Wunderlist web application (tested on 2.3.6.1)
   - A beer
 
@@ -16,7 +16,7 @@ Quick and dirty PHP script to import Wunderlist (http://www.wunderlist.com/) tas
   1. Get the script here : https://github.com/EpocDotFr/WunderlistToKanboard/archive/master.zip and unzip the content somewhere on your computer
   2. Go to the Wunderlist settings > **Account** tab, click on the **Create backup** button, and download the backup file
   3. Rename the downloaded file to `wunderlist.json`
-  4. Download your original Kanboard database (via FTP or via the **Settings** tab > **Download the database** link. Remember : Kanboard 1.0.3  only). Don't forget to make a backup
+  4. Download your original Kanboard database (via FTP or via the **Settings** tab > **Download the database** link). Don't forget to make a backup :)
   5. Throw these two files in the script directory. Your should have at this time `wunderlist.json` and `db.sqlite` next to the `run.php` file
   6. In your command line interpreter, launch `php run.php`. You should see some logging message
   7. If all is good, replace the old Kanboard database with the new one (e.g via FTP)
@@ -33,11 +33,13 @@ The `run.php` file is quite commented (I think) if you want to know more.
 Kanboard and Wunderlist are very different, so there's some things to know about what happens to your tasks and lists in certain cases :
 
   - Lists are imported as Projects
-  - The default Kanboard's columns are created for each imported projects ()
-  - Users cannot be imported
-  - Comments cannot be imported
+  - The default Kanboard's columns are created for each imported projects
+  - If a task is marked as completed on Wunderlist, it will be marked as closed on Kanboard
+  - Users cannot be imported (Wunderlist doesn't provide them in the export file except IDs)
+  - Attached files cannot be imported
+  - ~~Comments cannot be imported (Wunderlist doesn't provide them in the export file)~~ Now they are
   - Starred tasks will have a color of red, otherwise yellow (Kanboard's default)
-  - Sub-tasks are merged in their main task's description
+  - ~~Sub-tasks are merged in their main task's description~~ They are now created as real comments
 
 All the other data supported by Kanboard is imported with no problems.
 

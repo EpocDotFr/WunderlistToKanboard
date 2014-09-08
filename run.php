@@ -59,7 +59,7 @@ function message($message) {
 // This function is copied from kanboard, it generate a unique identifier for each projets (public access)
 function generateToken() {
   if (function_exists('openssl_random_pseudo_bytes')) {
-      return bin2hex(\openssl_random_pseudo_bytes(16));
+      return bin2hex(\openssl_random_pseudo_bytes(30));
   } else if (ini_get('open_basedir') === '' && strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
       return hash('sha256', file_get_contents('/dev/urandom', false, null, 0, 30));
   }
@@ -90,7 +90,7 @@ if ($wunderlist_raw_data === false) {
 $wunderlist_json_data = json_decode($wunderlist_raw_data);
 
 if ($wunderlist_json_data == null) {
-  message('! Error (errnum '.json_last_error().') reading the JSON data from the Wunderlist export file "'.WUNDERLIST_FILE.'"');
+  message('! Error (JSON errnum '.json_last_error().') reading the JSON data from the Wunderlist export file "'.WUNDERLIST_FILE.'"');
   exit();
 }
 
@@ -160,7 +160,7 @@ try {
     if (isset($task_to_import->parent_id)) { // If it's a sub-task, we ignore it (they will be handled later)
       continue;
     }
-
+    
     $task_imported = ORM::for_table('tasks')->create();
 
     $task_imported->title = $task_to_import->title;
@@ -176,7 +176,7 @@ try {
     $task_imported->date_due = isset($task_to_import->due_date) ? date_create($task_to_import->due_date)->getTimestamp() : null;
     
     $task_imported->save();
-
+    
     $tasks[$task_to_import->id] = $task_imported->id;
 
     message('> Main tasks > '.$task_imported->title);
@@ -184,27 +184,24 @@ try {
 
   message('> Sub tasks');
 
-  // Sub-tasks are merged in their main task's description like this :
-  //   - [ ] Sub-task 1
-  //   - [ ] Sub-task 2
+  // Sub-tasks time !
   foreach ($wunderlist_json_data->tasks as $task_to_import) {
-    if (!isset($task_to_import->parent_id)) { // If it's not a sub-task, we ignore it
+    if (!isset($task_to_import->parent_id)) { // If it's not a sub-task, we ignore it (it has been already imported above)
       continue;
     }
 
-    if (!isset($tasks[$task_to_import->parent_id])) { // The parent task does not exists, for a reason or another
+    if (!isset($tasks[$task_to_import->parent_id])) { // The parent task does not exists, for a reason or another (this should not happen)
       continue;
     }
-
-    $main_task = ORM::for_table('tasks')->find_one($tasks[$task_to_import->parent_id]); // Get the main task of this sub-task
-
-    if (!$main_task) {
-      continue;
-    }
-
-    $main_task->description = $main_task->description.PHP_EOL.'  - ['.(isset($task_to_import->completed_at) ? 'X' : ' ').'] '.$task_to_import->title;
-
-    $main_task->save();
+    
+    $sub_task_imported = ORM::for_table('task_has_subtasks')->create();
+    
+    $sub_task_imported->title = $task_to_import->title;
+    $sub_task_imported->status = isset($task_to_import->completed_at) ? 2 : 0;
+    $sub_task_imported->task_id = $tasks[$task_to_import->parent_id];
+    $sub_task_imported->user_id = 0; // We don't know him
+    
+    $sub_task_imported->save();
 
     message('> Sub tasks > '.$task_to_import->title);
   }
