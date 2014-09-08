@@ -39,7 +39,7 @@ Kanboard and Wunderlist are very different, so there's some things to know about
   - Attached files cannot be imported
   - Comments cannot be imported (Wunderlist doesn't provide them in the export file)
   - Starred tasks will have a color of red, otherwise yellow (Kanboard's default)
-  - ~~Sub-tasks are merged in their main task's description~~ They are now created as real comments
+  - ~~Sub-tasks are merged in their main task's description~~ They are now created as real sub-tasks
 
 All the other data supported by Kanboard is imported with no problems.
 
