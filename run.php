@@ -50,11 +50,31 @@ define('INBOX_TITLE', 'Boîte de réception');
 // There's is nothing to modify after this line
 // -------------------------------------------------------------------------- //
 
-require_once('idiorm.php'); // Include the ORM to play with the kanboard database
-
 function message($message) {
   echo $message.PHP_EOL;
 }
+
+if (!function_exists('json_last_error_msg')) {
+  function json_last_error_msg() {
+    static $errors = array(
+      JSON_ERROR_NONE             => null,
+      JSON_ERROR_DEPTH            => 'Maximum stack depth exceeded',
+      JSON_ERROR_STATE_MISMATCH   => 'Underflow or the modes mismatch',
+      JSON_ERROR_CTRL_CHAR        => 'Unexpected control character found',
+      JSON_ERROR_SYNTAX           => 'Syntax error, malformed JSON',
+      JSON_ERROR_UTF8             => 'Malformed UTF-8 characters, possibly incorrectly encoded'
+    );
+    $error = json_last_error();
+    return array_key_exists($error, $errors) ? $errors[$error] : "Unknown error ({$error})";
+  }
+}
+
+if (!extension_loaded('sqlite3')) {
+  message('! SQLite doesn\'t seems to be available.');
+  exit();
+}
+
+require_once('idiorm.php'); // Include the ORM to play with the kanboard database
 
 // This function is copied from kanboard, it generate a unique identifier for each projets (public access)
 function generateToken() {
@@ -90,7 +110,7 @@ if ($wunderlist_raw_data === false) {
 $wunderlist_json_data = json_decode($wunderlist_raw_data);
 
 if ($wunderlist_json_data == null) {
-  message('! Error (JSON errnum '.json_last_error().') reading the JSON data from the Wunderlist export file "'.WUNDERLIST_FILE.'"');
+  message('! Error reading the JSON data from the Wunderlist export file "'.WUNDERLIST_FILE.'" : '.json_last_error_msg());
   exit();
 }
 
@@ -109,27 +129,21 @@ message('Started importing');
 try {
   message('> Projects');
 
-  // We insert an "Inbox" list in the imported data, the script will create it as an Inbox project in kanboard to support Wunderlist tasks in the Inbox list
-  $inbox_list = new stdClass();
-  $inbox_list->id = 'inbox';
-  $inbox_list->title = INBOX_TITLE;
-
-  $wunderlist_json_data->lists[] = $inbox_list;
-
   // Importing lists as projects
-  foreach ($wunderlist_json_data->lists as $list) {
+  foreach ($wunderlist_json_data->data->lists as $list_to_import) {
     $project = ORM::for_table('projects')->create();
 
-    $project->name = $list->title;
-    $project->is_active = 1;
+    $project->name = $list_to_import->list_type == 'inbox' ? INBOX_TITLE : $list_to_import->title; // Take the real inbox title
+    $project->is_public = $list_to_import->public ? 1 : 0;
     $project->token = generateToken();
+    $project->last_modified = date_create()->getTimestamp();
 
     $project->save();
 
     message('> Projects > '.$project->name);
 
     // Save the Wunderlist and kanboard project IDs for future use
-    $projects[$list->id] = array(
+    $projects[$list_to_import->id] = array(
       'id' => $project->id,
       'columns' => array()
     );
@@ -147,33 +161,36 @@ try {
 
       message('> Projects > '.$project->name.' > Columns > '.$column->title);
 
-      $projects[$list->id]['columns'][] = $column->id; // Save this column ID for future use
+      $projects[$list_to_import->id]['columns'][] = $column->id; // Save this column ID for future use
     }
   }
-
+  
   // -------------------------------------------------------------------------- //
 
   message('> Main tasks');
 
-  // Importing the main tasks (without their sub-tasks at this moment)
-  foreach ($wunderlist_json_data->tasks as $task_to_import) {
-    if (isset($task_to_import->parent_id)) { // If it's a sub-task, we ignore it (they will be handled later)
-      continue;
-    }
-    
+  // Importing the main tasks
+  foreach ($wunderlist_json_data->data->tasks as $task_to_import) {
     $task_imported = ORM::for_table('tasks')->create();
 
     $task_imported->title = $task_to_import->title;
-    $task_imported->description = isset($task_to_import->note) ? str_replace('\n', PHP_EOL, $task_to_import->note) : null;
     $task_imported->date_creation = date_create($task_to_import->created_at)->getTimestamp();
+    $task_imported->date_modification = date_create()->getTimestamp();
     $task_imported->color_id = $task_to_import->starred ? 'red' : 'yellow'; // If the task was starred on Wunderlist, we assign the red color. Yellow by default (same as kanboard)
     $task_imported->project_id = $projects[$task_to_import->list_id]['id'];
-    $task_imported->column_id = isset($task_to_import->completed_at) ? $projects[$task_to_import->list_id]['columns'][KANBOARD_COMPLETED_COLUMN] : $projects[$task_to_import->list_id]['columns'][KANBOARD_DEFAULT_COLUMN]; // Move the task in the right column if it is completed or not
-    $task_imported->owner_id = 0; // The tasks are never assigned
-    $task_imported->is_active = isset($task_to_import->completed_at) ? 0 : 1;
-    $task_imported->date_completed = isset($task_to_import->completed_at) ? date_create($task_to_import->completed_at)->getTimestamp() : null;
-    $task_imported->score = null;
+    $task_imported->column_id = $task_to_import->completed ? $projects[$task_to_import->list_id]['columns'][KANBOARD_COMPLETED_COLUMN] : $projects[$task_to_import->list_id]['columns'][KANBOARD_DEFAULT_COLUMN]; // Move the task in the right column if it is completed or not
+    $task_imported->is_active = $task_to_import->completed ? 0 : 1;
+    $task_imported->date_completed = $task_to_import->completed ? date_create($task_to_import->completed_at)->getTimestamp() : null;
     $task_imported->date_due = isset($task_to_import->due_date) ? date_create($task_to_import->due_date)->getTimestamp() : null;
+    
+    // Description (note)
+    foreach ($wunderlist_json_data->data->notes as $note_to_import) {
+      if ($note_to_import->task_id == $task_to_import->id) {
+        $task_imported->description = str_replace('\n', PHP_EOL, $note_to_import->content);
+        
+        break;
+      }
+    }
     
     $task_imported->save();
     
@@ -185,25 +202,16 @@ try {
   message('> Sub tasks');
 
   // Sub-tasks time !
-  foreach ($wunderlist_json_data->tasks as $task_to_import) {
-    if (!isset($task_to_import->parent_id)) { // If it's not a sub-task, we ignore it (it has been already imported above)
-      continue;
-    }
-
-    if (!isset($tasks[$task_to_import->parent_id])) { // The parent task does not exists, for a reason or another (this should not happen)
-      continue;
-    }
-    
+  foreach ($wunderlist_json_data->data->subtasks as $subtasks_to_import) {
     $sub_task_imported = ORM::for_table('task_has_subtasks')->create();
     
-    $sub_task_imported->title = $task_to_import->title;
-    $sub_task_imported->status = isset($task_to_import->completed_at) ? 2 : 0;
-    $sub_task_imported->task_id = $tasks[$task_to_import->parent_id];
-    $sub_task_imported->user_id = 0; // We don't know him
+    $sub_task_imported->title = $subtasks_to_import->title;
+    $sub_task_imported->status = $subtasks_to_import->completed ? 2 : 0;
+    $sub_task_imported->task_id = $tasks[$subtasks_to_import->task_id];
     
     $sub_task_imported->save();
 
-    message('> Sub tasks > '.$task_to_import->title);
+    message('> Sub tasks > '.$subtasks_to_import->title);
   }
 
   message('Saving database...');

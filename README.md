@@ -7,8 +7,8 @@ Quick and dirty PHP script to import Wunderlist (http://www.wunderlist.com/) tas
 
   - PHP (any >= 5.x version should work, this script was tested on PHP 5.4.31) with SQLite 3 support
   - A command line interpreter
-  - Kanboard 1.0.7 **/!\ this script was tested on this version only**
-  - Wunderlist web application (tested on 2.3.6.1)
+  - Kanboard 1.0.12
+  - Wunderlist web application 3.3.8
   - A beer
 
 ## Quick usage
@@ -34,11 +34,14 @@ Kanboard and Wunderlist are very different, so there's some things to know about
 
   - Lists are imported as Projects
   - The default Kanboard's columns are created for each imported projects
-  - If a task is marked as completed on Wunderlist, it will be marked as closed on Kanboard
-  - Users cannot be imported (Wunderlist doesn't provide them in the export file except IDs)
+  - If a task is tagged as completed on Wunderlist, it will be tagged as closed on Kanboard
+  - Users cannot be imported
   - Attached files cannot be imported
-  - Comments cannot be imported (Wunderlist doesn't provide them in the export file)
+  - Comments cannot be imported
+  - Public lists are imported as public projects
   - Starred tasks will have a color of red, otherwise yellow (Kanboard's default)
+  - Completed tasks are moved to the KANBOARD_COMPLETED_COLUMN column and tagged as completed
+  - Notes are imported as task description
   - ~~Sub-tasks are merged in their main task's description~~ They are now created as real sub-tasks
 
 All the other data supported by Kanboard is imported with no problems.
