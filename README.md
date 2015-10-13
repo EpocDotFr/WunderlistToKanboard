@@ -1,3 +1,11 @@
+----
+
+##### NOTICE
+
+This repository is deprecated and is no longer maintained. See https://github.com/EpocDotFr/kanboard-wunderlist for a better alternative.
+
+----
+
 WunderlistToKanboard
 ====================
 
